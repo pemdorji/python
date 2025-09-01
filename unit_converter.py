@@ -125,10 +125,9 @@ def save_history(inp, f, t, res, cat_id):
 # Styling
 # ===============================
 def apply_theme(theme="light"):
-    # Use built-in 'clam' for consistency
     style.theme_use("clam")
     if theme == "light":
-        bg = "#f6f8fb"
+        bg = "skyblue"   # Main window background
         card_bg = "#ffffff"
         fg = "#222222"
         subtle = "#6b7280"
@@ -160,7 +159,6 @@ def apply_theme(theme="light"):
     style.configure("TCombobox", fieldbackground=entry_bg)
     style.configure("Status.TLabel", background=bg, foreground=subtle)
 
-    # Treeview theme (for history)
     style.configure("Treeview",
                     background=tree_bg_even,
                     fieldbackground=tree_bg_even,
@@ -171,15 +169,30 @@ def apply_theme(theme="light"):
                     background=card_bg,
                     foreground=fg,
                     font=("Segoe UI", 10, "bold"))
-    # Row colors applied via tags when inserting rows
+
     tree_colors["even"] = tree_bg_even
     tree_colors["odd"] = tree_bg_odd
+
+    # =========================
+    # Custom Button Colors
+    # =========================
+    style.configure("Convert.TButton", background="#22c55e", foreground="white")  # green
+    style.map("Convert.TButton", background=[("active", "#16a34a")])
+
+    style.configure("Clear.TButton", background="#ef4444", foreground="white")  # red
+    style.map("Clear.TButton", background=[("active", "#dc2626")])
+
+    style.configure("History.TButton", background="#8b5cf6", foreground="white")  # purple
+    style.map("History.TButton", background=[("active", "#7c3aed")])
+
+    style.configure("Theme.TButton", background="#fbbf24", foreground="white")  # amber for theme toggle
+    style.map("Theme.TButton", background=[("active", "#f59e0b")])
 
 # ===============================
 # UI Behaviors
 # ===============================
 def validate_number(action, value_if_allowed):
-    if action == "0":  # deletion always ok
+    if action == "0":  # deletion
         return True
     try:
         float(value_if_allowed)
@@ -210,7 +223,6 @@ def convert(event=None):
             messagebox.showerror("Category Mismatch", "Please choose units from the same category.")
             return
 
-        # Convert to base, then to target
         base_val = (input_val * f_factor) + f_offset
         result = (base_val - t_offset) / t_factor
 
@@ -236,7 +248,6 @@ def swap_units(event=None):
     t = to_unit.get()
     from_unit.set(t)
     to_unit.set(f)
-    # Re-convert with swapped units if there is a value
     if value_var.get().strip() != "":
         convert()
 
@@ -254,7 +265,6 @@ def show_history():
     wrapper = ttk.Frame(hist, padding=16, style="Card.TFrame")
     wrapper.pack(fill="both", expand=True, padx=12, pady=12)
 
-    # Search Row
     row = ttk.Frame(wrapper)
     row.pack(fill="x", pady=(0, 10))
 
@@ -267,7 +277,6 @@ def show_history():
     search_by.pack(side="left", padx=8)
     ttk.Button(row, text="Search", command=lambda: load_history(tree, search_text.get(), search_by.get()), style="Accent.TButton").pack(side="left", padx=(6, 0))
 
-    # Action Row - Clear History
     action_row = ttk.Frame(wrapper)
     action_row.pack(fill="x", pady=(0, 10))
     def clear_history():
@@ -280,7 +289,6 @@ def show_history():
             messagebox.showinfo("History Cleared", "All conversion history has been deleted.")
     ttk.Button(action_row, text="Clear History", command=clear_history, style="Accent.TButton").pack(side="left")
 
-    # Treeview
     cols = ("ID", "Input", "From", "To", "Result", "Category ID", "Timestamp")
     tree = ttk.Treeview(wrapper, columns=cols, show="headings")
     for col in cols:
@@ -293,7 +301,6 @@ def show_history():
     tree.configure(yscrollcommand=yscroll.set)
     yscroll.place(in_=tree, relx=1.0, x=0, y=0, relheight=1.0, anchor="ne")
 
-    # Load initial
     load_history(tree)
     search_entry.focus()
 
@@ -325,7 +332,6 @@ def load_history(tree, query="", selected="All"):
             if query in str(row[idx]).lower():
                 filtered.append(row)
 
-    # Insert with zebra stripes
     for i, r in enumerate(filtered):
         tag = "even" if i % 2 == 0 else "odd"
         tree.insert("", "end", values=r, tags=(tag,))
@@ -351,21 +357,17 @@ style = ttk.Style()
 tree_colors = {"even": "#ffffff", "odd": "#f3f4f6"}
 theme_var = tk.StringVar(value="light")
 
-# Card container
 card = ttk.Frame(root, padding=16, style="Card.TFrame")
 card.place(relx=0.5, rely=0.5, anchor="center", relwidth=0.92, relheight=0.88)
 
-# Title
 title = ttk.Label(card, text="🔄 Unit Converter", style="Title.TLabel")
 title.grid(row=0, column=0, columnspan=3, pady=(4, 10), sticky="w")
 
-# Category
 ttk.Label(card, text="Category").grid(row=1, column=0, sticky="w", pady=(2, 2))
 category = ttk.Combobox(card, state="readonly", width=26)
 category.grid(row=2, column=0, sticky="we", padx=(0, 10))
 category.bind("<<ComboboxSelected>>", update_units)
 
-# From / To with swap
 ttk.Label(card, text="From").grid(row=3, column=0, sticky="w", pady=(10, 2))
 from_unit = ttk.Combobox(card, state="readonly")
 from_unit.grid(row=4, column=0, sticky="we", padx=(0, 10))
@@ -377,49 +379,42 @@ ttk.Label(card, text="To").grid(row=3, column=2, sticky="w", pady=(10, 2))
 to_unit = ttk.Combobox(card, state="readonly")
 to_unit.grid(row=4, column=2, sticky="we", padx=(10, 0))
 
-# Value
 ttk.Label(card, text="Value").grid(row=5, column=0, sticky="w", pady=(14, 2))
 value_var = tk.StringVar()
 vcmd = (root.register(validate_number), "%d", "%P")
 value_entry = ttk.Entry(card, textvariable=value_var, validate="key", validatecommand=vcmd)
 value_entry.grid(row=6, column=0, columnspan=3, sticky="we")
 
-# Buttons row
 btn_row = ttk.Frame(card)
 btn_row.grid(row=7, column=0, columnspan=3, sticky="we", pady=(16, 8))
-convert_btn = ttk.Button(btn_row, text="Convert", command=convert, style="Accent.TButton")
+convert_btn = ttk.Button(btn_row, text="Convert", command=convert, style="Convert.TButton")
 convert_btn.pack(side="left")
-clear_btn = ttk.Button(btn_row, text="Clear", command=clear_all)
+clear_btn = ttk.Button(btn_row, text="Clear", command=clear_all, style="Clear.TButton")
 clear_btn.pack(side="left", padx=8)
-hist_btn = ttk.Button(btn_row, text="History", command=show_history)
+hist_btn = ttk.Button(btn_row, text="History", command=show_history, style="History.TButton")
 hist_btn.pack(side="left", padx=8)
-theme_btn = ttk.Button(btn_row, text="Toggle Theme", command=toggle_theme)
+theme_btn = ttk.Button(btn_row, text="Toggle Theme", command=toggle_theme, style="Theme.TButton")
 theme_btn.pack(side="right")
 
-# Result (Copy button removed)
 ttk.Label(card, text="Result").grid(row=8, column=0, sticky="w", pady=(8, 2))
 result_var = tk.StringVar(value="—")
 result_label = ttk.Label(card, textvariable=result_var, font=("Segoe UI", 14, "bold"))
 result_label.grid(row=9, column=0, columnspan=3, sticky="w")
 
-# Status bar
 status_var = tk.StringVar(value="Ready.")
 status_bar = ttk.Label(root, textvariable=status_var, style="Status.TLabel", anchor="w")
 status_bar.pack(side="bottom", fill="x", padx=10, pady=6)
 
-# Grid weights for responsiveness
 card.columnconfigure(0, weight=1)
 card.columnconfigure(1, weight=0, minsize=84)
 card.columnconfigure(2, weight=1)
 
-# Populate initial data
 cats = get_categories()
 category["values"] = cats
 if cats:
     category.set(cats[0])
     update_units()
 
-# Key bindings
 root.bind("<Return>", convert)
 root.bind("<Control-h>", lambda e: show_history())
 root.bind("<Control-H>", lambda e: show_history())
@@ -428,7 +423,6 @@ root.bind("<Control-L>", clear_all)
 root.bind("<Control-j>", swap_units)
 root.bind("<Control-J>", swap_units)
 
-# Apply initial theme and start
 apply_theme(theme_var.get())
 value_entry.focus()
 root.mainloop()
