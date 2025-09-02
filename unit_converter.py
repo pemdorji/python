@@ -383,7 +383,7 @@ ttk.Label(card, text="Value").grid(row=5, column=0, sticky="w", pady=(14, 2))
 value_var = tk.StringVar()
 vcmd = (root.register(validate_number), "%d", "%P")
 value_entry = ttk.Entry(card, textvariable=value_var, validate="key", validatecommand=vcmd)
-value_entry.grid(row=6, column=0, columnspan=3, sticky="we")
+value_entry.grid(row=6, column=0, columnspan=1, sticky="we")
 
 btn_row = ttk.Frame(card)
 btn_row.grid(row=7, column=0, columnspan=3, sticky="we", pady=(16, 8))
